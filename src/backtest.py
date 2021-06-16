@@ -119,6 +119,9 @@ shortRight = LONG_EMA_LEN - 1
 shortSmoothingFactor = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
 # compute initial short and long EMA's
+longEMAVals = []
+shortEMAVals = [np.nan for i in range(SHORT_EMA_LEN)]
+
 dayIdx = 0
 for dayIdx in range(LONG_EMA_LEN):
     # compute long EMA
@@ -131,9 +134,8 @@ for dayIdx in range(LONG_EMA_LEN):
         shortEMA += (prevShortEMA * (1 - shortSmoothingFactor)) + \
             (float(dailyOHLC[dayIdx][OHLC_Data.close]) * shortSmoothingFactor)
         prevShortEMA = shortEMA
-
-longEMAVals = [np.nan for i in range(LONG_EMA_LEN)] + []
-shortEMAVals = [np.nan for i in range(LONG_EMA_LEN)] + []
+        shortEMAVals.append(shortEMA)
+    longEMAVals.append(longEMA)
 
 funds = originalFunds = 100
 ethQty = 0
@@ -171,8 +173,10 @@ daily = pd.read_csv('data.csv', index_col=0, parse_dates=[
 daily.index.name = 'Date'
 
 ap = [
-    mpf.make_addplot(longEMAVals, color='blue', type='scatter'),
-    mpf.make_addplot(shortEMAVals, color='orange', type='scatter')
+    mpf.make_addplot(longEMAVals, color='blue', type='line'),
+    mpf.make_addplot(shortEMAVals, color='orange', type='line')
 ]
-mpf.plot(daily, type='hollow_and_filled',
-         style='yahoo', addplot=ap)
+fig, ax = mpf.plot(daily, type='hollow_and_filled',
+                   style='yahoo', addplot=ap)
+
+ax[0].legend(['hi'])
