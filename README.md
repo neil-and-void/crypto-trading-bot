@@ -5,7 +5,7 @@ Ethereum trading bot using a 10/5 exponential moving average crossover strategy.
 * Python
 * Numpy
 * Pandas
-* MatPlotLib (locally for testing strategies)
+* MatPlotLib, MPLFinanace (locally for testing strategies)
 * Kraken API
 * Docker
 
