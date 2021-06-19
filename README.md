@@ -1,5 +1,5 @@
 # Ethereum Crypto Trading Bot
-Ethereum trading bot using a 10/5 exponential moving average crossover strategy. Implements the strategy design pattern.
+Ethereum trading bot using a 10/5 exponential moving average crossover strategy.
 
 # Technologies Used
 * Python

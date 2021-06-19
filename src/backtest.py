@@ -25,7 +25,10 @@ from constants import *
 
 dotenv_path = join(dirname(__file__), '../.env')
 load_dotenv(dotenv_path)
-KRAKEN_API_SEC = os.environ.get("KRAKEN_API_SEC")
+KRAKEN_PRIVATE_KEY = os.environ.get("KRAKEN_PRIVATE_KEY")
+KRAKEN_API_KEY = os.environ.get("KRAKEN_API_KEY")
+
+krakenexAPI = api(key=KRAKEN_API_KEY, secret=KRAKEN_PRIVATE_KEY)
 
 
 class OHLC_Data(IntEnum):
@@ -62,7 +65,8 @@ data = {
     "volume": 1.25
 }
 
-signature = get_kraken_signature("/0/private/AddOrder", data, KRAKEN_API_SEC)
+signature = get_kraken_signature(
+    "/0/private/AddOrder", data, KRAKEN_PRIVATE_KEY)
 
 
 ##### END OF GENERATED CODE #####
@@ -76,9 +80,20 @@ threeMonthDateTime = today - threeMonthDelta
 threeMonthDateTimeMilliseconds = int(threeMonthDateTime.timestamp())
 
 url = f'https://api.kraken.com/0/public/OHLC?pair={pair}&interval={interval}&since={threeMonthDateTimeMilliseconds}'
-headers = {'API-Key': KRAKEN_API_SEC, 'API-Sign': signature}
+headers = {'API-Key': KRAKEN_PRIVATE_KEY, 'API-Sign': signature}
 res = requests.get(url, headers=headers)
 dailyOHLC = res.json()['result']['XETHZCAD']
+# get daily closing prices from last 3 months
+pair = 'ETHUSD'
+interval = 1440  # 1 day in minutes
+today = datetime.today()
+threeMonthDelta = timedelta(days=90)
+threeMonthDateTime = today - threeMonthDelta
+threeMonthDateTimeMilliseconds = int(threeMonthDateTime.timestamp())
+
+dailyOHLC = k.query_public(
+    f'OHLC?pair={pair}&interval={interval}&since={threeMonthDateTimeMilliseconds}')
+
 
 # write data to data.txt
 # f = open("data.txt", "w")
@@ -98,85 +113,83 @@ f = open("data.txt", "r")
 json_data = json.loads(f.read())
 dailyOHLC = json_data['result']['XETHZCAD']
 
-# backtest over historical data
-
-# initialize matplotlib plot
-
-
 # initialize variables for backtesting
 timeFrameLen = len(dailyOHLC)
 
 longEMA = 0
-prevLongEMA = 0
-longLeft = 0
-longRight = LONG_EMA_LEN - 1
 longSmoothingFactor = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
 
 shortEMA = 0
-prevShortEMA = 0
-shortLeft = LONG_EMA_LEN - SHORT_EMA_LEN - 1
-shortRight = LONG_EMA_LEN - 1
 shortSmoothingFactor = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
-# compute initial short and long EMA's
-longEMAVals = []
-shortEMAVals = [np.nan for i in range(SHORT_EMA_LEN)]
-
-dayIdx = 0
+# compute initial short and long SMA to use as initial previous EMA
+for dayIdx in range(SHORT_EMA_LEN, LONG_EMA_LEN):
+    shortEMA += float(dailyOHLC[dayIdx][OHLC_Data.close])
 for dayIdx in range(LONG_EMA_LEN):
-    # compute long EMA
-    longEMA += (prevLongEMA * (1 - longSmoothingFactor)) + \
-        (float(dailyOHLC[dayIdx][OHLC_Data.close]) * longSmoothingFactor)
-    prevLongEMA = longEMA
+    longEMA += float(dailyOHLC[dayIdx][OHLC_Data.close])
+shortEMA /= SHORT_EMA_LEN
+longEMA /= LONG_EMA_LEN
 
-    # compute short EMA
-    if (SHORT_EMA_LEN - 1) < dayIdx:
-        shortEMA += (prevShortEMA * (1 - shortSmoothingFactor)) + \
-            (float(dailyOHLC[dayIdx][OHLC_Data.close]) * shortSmoothingFactor)
-        prevShortEMA = shortEMA
-        shortEMAVals.append(shortEMA)
-    longEMAVals.append(longEMA)
+# data for mplfinance plot
+longEMAVals = [np.nan for i in range(LONG_EMA_LEN)]
+shortEMAVals = [np.nan for i in range(LONG_EMA_LEN)]
+sellVals = [np.nan for i in range(timeFrameLen)]
+buyVals = [np.nan for i in range(timeFrameLen)]
 
+# go through the rest of the days and compute EMA's
 funds = originalFunds = 100
 ethQty = 0
 bought = False
-dayIdx += 1
+dayIdx = LONG_EMA_LEN
+closePrice = 0
+buyPrice = 0
 while dayIdx < timeFrameLen:
-    longEMA -= (float(dailyOHLC[dayIdx - LONG_EMA_LEN]
-                [OHLC_Data.close]) * longSmoothingFactor)
-    longEMA = (longEMA * (1 - longSmoothingFactor) +
-               (float(dailyOHLC[dayIdx][OHLC_Data.close]) * longSmoothingFactor))
-
-    shortEMA -= (float(dailyOHLC[dayIdx - SHORT_EMA_LEN]
-                 [OHLC_Data.close]) * shortSmoothingFactor)
+    closePrice = float(dailyOHLC[dayIdx][OHLC_Data.close])
     shortEMA = (shortEMA * (1 - shortSmoothingFactor) +
-                (float(dailyOHLC[dayIdx][OHLC_Data.close]) * shortSmoothingFactor))
+                (closePrice * shortSmoothingFactor))
+    longEMA = (longEMA * (1 - longSmoothingFactor) +
+               (closePrice * longSmoothingFactor))
+
+    # TODO: stop loss
+    # if bought and cllo:
+    # buy signal
+    if not bought and longEMA < shortEMA:
+        ethQty = funds / closePrice
+        buyVals[dayIdx] = closePrice
+        buyPrice = closePrice
+        bought = True
+    # sell signal
+    if bought and ((shortEMA < longEMA) or ((ethQty * closePrice) < 0.9 * (ethQty * buyPrice))):
+        funds = ethQty * closePrice
+        sellVals[dayIdx] = closePrice
+        bought = False
 
     longEMAVals.append(longEMA)
     shortEMAVals.append(shortEMA)
-    # print(
-    #     f'{float(dailyOHLC[dayIdx][OHLC_Data.close])} | {longEMA} | {shortEMA}')
     dayIdx += 1
+    print(f'{closePrice} | {longEMA} | {shortEMA}')
+
+# convert owned Ethereum to cash
+if bought:
+    funds = ethQty * closePrice
 
 # outcome of strategy
-# if bought:
-#     funds = ethQty * curClosingPrice
-# print(f'Funds: {funds} | Profit {funds - originalFunds}')
+print(f'Funds: {funds} | Profit {funds - originalFunds}')
 
 
 def dateparse(unixTime):
     return datetime.fromtimestamp(float(unixTime))
 
 
+# plot EMA, buy and sell vals on OHLC plot
 daily = pd.read_csv('data.csv', index_col=0, parse_dates=[
                     0], date_parser=dateparse)
 daily.index.name = 'Date'
-
 ap = [
     mpf.make_addplot(longEMAVals, color='blue', type='line'),
-    mpf.make_addplot(shortEMAVals, color='orange', type='line')
+    mpf.make_addplot(shortEMAVals, color='orange', type='line'),
+    mpf.make_addplot(sellVals, color='red', type='scatter', markersize=75),
+    mpf.make_addplot(buyVals, color='green', type='scatter', markersize=75)
 ]
-fig, ax = mpf.plot(daily, type='hollow_and_filled',
-                   style='yahoo', addplot=ap)
-
-ax[0].legend(['hi'])
+mpf.plot(daily, type='candle', show_nontrading=True,
+         style='ibd', addplot=ap)
