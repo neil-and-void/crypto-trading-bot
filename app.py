@@ -30,10 +30,14 @@ def main():
         print("""'test' - run strategy with past 3 months of closing prices\n'plot' - plot strategy for past 3 months\n'start' - run the strategy live""")
 
     elif arg == "test":
-        results = neilBot.backtest(720)  # TODO: change hardcoded hours
+        results = neilBot.backtest(365)  # TODO: change hardcoded hours
+        profits = results['wallet'] - results['initialWallet']
+        percentage = profits / results['initialWallet']
+        print('=== from {days} days ago to today ===\nprofits: {profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=120,
+                                                                                                                   profits=profits, percentage=percentage))
 
     elif arg == "plot":
-        neilBot.plot(720)  # TODO: change hardcoded hours
+        neilBot.plot(365)  # TODO: change hardcoded hours
 
     elif arg == "start":
         neilBot.run()

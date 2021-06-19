@@ -1,20 +1,11 @@
 from typing import *
-import sched
-import time
+import schedule
 from datetime import datetime, date, timedelta
-import requests
-import urllib.parse
-import hashlib
-import hmac
-import mplfinance as mpf
 import pandas as pd
-import json
-import base64
+import time
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
-import os
-from os.path import join, dirname
-from dotenv import load_dotenv
 
 from src.constants import *
 from src.constants import OHLC
@@ -33,6 +24,7 @@ class NeilBot():
         self.client = client
         self.pair = pair
         self.backtestResults = {}
+        self.state = {}
 
     def _buy(self) -> None:
         pass
@@ -40,16 +32,19 @@ class NeilBot():
     def _sell(self) -> None:
         pass
 
-    def _analyze(self) -> None:
+    def _analyze(self, ohlc) -> None:
+        """
+        Analyze for the occurrence of a buy or sell signal with the current state and ohlc data
+        """
         # check for sell off limit
 
         # check for buy signal
 
         # check for sell signal
-        pass
+        print('analyze')
 
     def _queryOHLC(self, days) -> dict:
-        interval = 60  # 1 hour in minutes
+        interval = 1440  # 1 hour in minutes
         today = datetime.today()
         periodLen = timedelta(days=days)
         period = today - periodLen
@@ -57,94 +52,119 @@ class NeilBot():
         return self.client.query_public(
             f'OHLC?pair={self.pair}&interval={interval}&since={periodTimeStamp}')
 
-    def backtest(self, hours) -> dict:
+    def backtest(self, days) -> dict:
         """backtest the strategy and get results for it
 
         :param days: number of days to backtest over from today
         :type days: int
         """
-        response = self._queryOHLC(hours)
-        hourly = response['result'][self.pair]
-        print(len(hourly))
+        response = self._queryOHLC(days)
+        daily = response['result'][self.pair]
 
-        hourlyClose = np.array([hourOHLC[OHLC.close] for hourOHLC in hourly])
-        print(hourlyClose)
+        dailyClose = np.array([float(dayOHLC[OHLC.close])
+                               for dayOHLC in daily])
 
         # compute initial long and short EMA ie. the respective SMA's
-        longEMA = sum([float(hourly[hour][OHLC.close])
-                       for hour in range(LONG_EMA_LEN)]) / LONG_EMA_LEN
-        shortEMA = sum([float(hourly[hour][OHLC.close])
-                        for hour in range(SHORT_EMA_LEN, LONG_EMA_LEN)]) / SHORT_EMA_LEN
+        longEMA = sum(dailyClose[:LONG_EMA_LEN]) / LONG_EMA_LEN
+        shortEMA = sum(
+            dailyClose[SHORT_EMA_LEN: LONG_EMA_LEN]) / (LONG_EMA_LEN - SHORT_EMA_LEN)
+
         longSmoothingFactor = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
         shortSmoothingFactor = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
-        longEMAVals = np.empty(hours)
-        shortEMAVals = np.empty(hours)
+        longEMAVals = np.array([None for i in range(days)])
+        shortEMAVals = np.array([None for i in range(days)])
         longEMAVals[LONG_EMA_LEN - 1] = longEMA
         shortEMAVals[LONG_EMA_LEN - 1] = shortEMA
 
         coinQty = 0
         wallet = initialWallet = 100
         bought = False
-        for hourIdx in range(LONG_EMA_LEN, hours):
-            closePrice = float(hourly[hourIdx][OHLC.close])
+        buyPrice = 0
+        crossed = 0
+        minCross = 2
+        buys = np.array([None for i in range(days)])
+        sells = np.array([None for i in range(days)])
+        for dayIdx in range(LONG_EMA_LEN, days):
+            closePrice = float(daily[dayIdx][OHLC.close])
             shortEMA = (shortEMA * (1 - shortSmoothingFactor) +
                         (closePrice * shortSmoothingFactor))
             longEMA = (longEMA * (1 - longSmoothingFactor) +
                        (closePrice * longSmoothingFactor))
 
             # buy signal
-            if not bought and shortEMA > longEMA:
-                coinQty = wallet / closePrice
-                bought = True
+            if not bought and longEMA < shortEMA:
+                if minCross < crossed:
+                    coinQty = wallet / closePrice
+                    buys[dayIdx] = closePrice
+                    buyPrice = closePrice
+                    bought = True
+                crossed += 1
 
-            # sell signal
-            if bought and longEMA > shortEMA:
-                wallet = coinQty * closePrice
-                bought = False
+            # sell signal or stop loss at 10%
+            if bought and (shortEMA < longEMA or coinQty * closePrice < 0.9 * (coinQty * buyPrice)):
+                if minCross < crossed:
+                    wallet = coinQty * closePrice
+                    sells[dayIdx] = closePrice
+                    bought = False
+                crossed += 1
 
-            longEMAVals[hourIdx] = longEMA
-            shortEMAVals[hourIdx] = shortEMA
-        print('result', wallet)
-        self.backtestResults = {
+            longEMAVals[dayIdx] = longEMA
+            shortEMAVals[dayIdx] = shortEMA
+        if bought:
+            wallet = coinQty * closePrice
+        return {
             'longEMAVals': longEMAVals,
             'shortEMAVals': shortEMAVals,
-            'wallet': wallet
+            'buys': buys,
+            'sells': sells,
+            'initialWallet': initialWallet,
+            'wallet': wallet,
         }
 
-    def plot(self, hours) -> None:
+    def plot(self, days) -> None:
         """plot the long and short EMA's on an OHLC candlestick mpl plot
 
         :param days: number of days to backtest over from today
         :type days: int
         """
-        self.backtest(hours)
-        response = self._queryOHLC(hours)
-        hourly = response['result'][self.pair]
-        for hourIdx in range(len(hourly)):
-            hourly[hourIdx][0] = datetime.fromtimestamp(hourly[hourIdx][0])
-            for i in range(1, 8):
-                hourly[hourIdx][i] = float(hourly[hourIdx][i])
+        results = self.backtest(days)
+        response = self._queryOHLC(days)
+        daily = response['result'][self.pair]
+        dailyClose = np.array([float(dayOHLC[OHLC.close])
+                               for dayOHLC in daily])
+        times = np.array([datetime.utcfromtimestamp(dayOHLC[OHLC.time]).strftime('%b %d %H:%M')
+                         for dayOHLC in daily])
 
-        labels = [label.name for label in OHLC]
-        labels[OHLC.time] = 'Date'
-        df = pd.DataFrame(columns=labels, data=hourly)
-        df.index = pd.DatetimeIndex(df['Date'])
+        fig, ax = plt.subplots()
 
-        # plot EMA, buy and sell vals on OHLC plot
-        ap = [
-            mpf.make_addplot(self.backtestResults['longEMAVals'],
-                             color='blue', type='line'),
-            mpf.make_addplot(self.backtestResults['shortEMAVals'],
-                             color='orange', type='line'),
-            # mpf.make_addplot(sellVals, color='red',
-            #                  type='scatter', markersize=75),
-            # mpf.make_addplot(buyVals, color='green',
-            #                  type='scatter', markersize=75)
-        ]
-        mpf.plot(df, type='candle', show_nontrading=True,
-                 style='ibd', addplot=ap)
+        plt.xlabel('Dates (UTC)')
+        plt.ylabel(f'Hourly closing prices ({self.pair})')
+        plt.plot(times, dailyClose,
+                 label=f"{self.pair} close price", color="black")
+        plt.plot(times, results['longEMAVals'],
+                 label=f"{LONG_EMA_LEN} EMA", color="blue")
+        plt.plot(times, results['shortEMAVals'],
+                 label=f"{SHORT_EMA_LEN} EMA", color="orange")
+        plt.plot(times, results['buys'],
+                 label="Buy Indicator", marker=".", linestyle='None', color="green", markersize=10)
+        plt.plot(times, results['sells'],
+                 label="Sell Indicator", marker=".", linestyle='None', color="red", markersize=10)
+
+        plt.legend()
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(days // 12))
+        plt.grid()
+        fig.autofmt_xdate()
+        ax.autoscale()
+        plt.title(
+            f'EMA 10/5 Day Cross with Buy and Sell Indicators for {self.pair}')
+        plt.show()
 
     def run(self) -> None:
+        # initialize state
+
+        schedule.every(1).seconds.do(self._analyze)
+        # schedule.every().day.at("18:00").do(self._analyze)
         while True:
-            self._analyze()
+            schedule.run_pending()
+            time.sleep(1)
