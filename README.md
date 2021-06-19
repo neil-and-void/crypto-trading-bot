@@ -10,11 +10,13 @@ Ethereum trading bot using an EMA 10-5 day cross indicator
 * Docker
 
 # Backtesting results
-## 3 months from
-* profits: 72.155
+## 3 months from June 19
+* profits: $72.155
 * profit (%): 72.155%
 ![3 month backtest plot](./images/backtest_3month.png "3 month backtest plot")
-## 1 year from
+## 1 year from June 19
+* profits: $719.138
+* profit (%): 719.138%
 ![1 Year backtest plot ](./images/backtest_1year.png "1 year backtest plot")
 
 # Disclaimer
