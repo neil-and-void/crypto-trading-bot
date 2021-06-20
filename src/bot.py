@@ -47,20 +47,34 @@ class NeilBot():
         response = self.client.query_private('AddOrder', data=data)
         print(response['result']['descr']['order'])
 
-    def _analyze(self, ohlc) -> None:
+    def _analyze(self) -> None:
         """
-        Analyze for the occurrence of a buy or sell signal with the current state and ohlc data
+        Analyze for the occurrence of a buy or sell signal for today
         """
-        # query for latest day ohlc
+        response = self._queryOHLC(1)  # past day OHLC
+        pastDay = response['result'][self.pair]
+        print(pastDay)
 
-        # compute EMA
+        # # query for latest day ohlc
+        longSmoothing = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
+        shortSmoothing = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
-        # check for sell off limit
+        # # compute EMA's
+        closePrice = float(daily[dayIdx][OHLC.close])
+        shortEMA = (self.state['shortEMA'] * (1 - shortSmoothing) +
+                    (closePrice * shortSmoothing))
+        longEMA = (self.state['longEMA'] * (1 - longSmoothing) +
+                   (closePrice * longSmoothing))
 
         # check for buy signal
+        if not bought and longEMA < shortEMA:
+            self._buy()
 
-        # check for sell signal
-        print('analyze')
+        # sell signal or stop loss at 10%
+        if bought and (shortEMA < longEMA or coinQty * closePrice < 0.9 * (coinQty * buyPrice)):
+            self._sell()
+
+        # check for sell signal or stop loss
 
     def _queryOHLC(self, days) -> dict:
         """get OHLC period data of length days
@@ -70,7 +84,7 @@ class NeilBot():
         :return: [description]
         :rtype: dict
         """
-        interval = 1440  # 1 hour in minutes
+        interval = 1440  # 1 day in minutes
         today = datetime.today()
         periodLen = timedelta(days=days)
         period = today - periodLen
@@ -131,7 +145,7 @@ class NeilBot():
         bought = False
         buyPrice = 0
         crossed = False
-        crossCount = 9
+        crossCount = 0
         minCross = 2
         buys = np.array([None for i in range(days)])
         sells = np.array([None for i in range(days)])
@@ -141,11 +155,18 @@ class NeilBot():
                         (closePrice * shortSmoothing))
             longEMA = (longEMA * (1 - longSmoothing) +
                        (closePrice * longSmoothing))
+            longEMAVals[dayIdx] = longEMA
+            shortEMAVals[dayIdx] = shortEMA
 
-            # longEMA = self._ema(dayIdx, dailyClose,
-            #                     LONG_EMA_LEN, longSmoothing)
-            # shortEMA = self._ema(dayIdx, dailyClose,
-            #                      SHORT_EMA_LEN, shortSmoothing)
+            # count amount of times a cross has occurred
+            prevDayIdx = dayIdx - 1
+            if (shortEMAVals[prevDayIdx] < longEMAVals[prevDayIdx] and longEMA < shortEMA) \
+                    or (longEMAVals[prevDayIdx] < shortEMAVals[prevDayIdx] and shortEMA < longEMA):
+                crossCount += 1
+
+            # wait for 2 crosses before entering market
+            if crossCount < minCross:
+                continue
 
             # buy signal
             if not bought and longEMA < shortEMA:
@@ -154,7 +175,6 @@ class NeilBot():
                     buys[dayIdx] = closePrice
                     buyPrice = closePrice
                     bought = True
-                crossCount += 1
 
             # sell signal or stop loss at 10%
             if bought and (shortEMA < longEMA or coinQty * closePrice < 0.9 * (coinQty * buyPrice)):
@@ -162,10 +182,7 @@ class NeilBot():
                     wallet = coinQty * closePrice
                     sells[dayIdx] = closePrice
                     bought = False
-                crossCount += 1
 
-            longEMAVals[dayIdx] = longEMA
-            shortEMAVals[dayIdx] = shortEMA
         if bought:
             wallet = coinQty * closePrice
         return {
@@ -212,25 +229,40 @@ class NeilBot():
         fig.autofmt_xdate()
         ax.autoscale()
         plt.title(
-            f'EMA 10/5 Day Cross with Buy and Sell Indicators for {self.pair}')
+            f'EMA {LONG_EMA_LEN}/{SHORT_EMA_LEN} Day Cross with Buy and Sell Indicators for {self.pair} ({days} days)')
         plt.show()
 
     def run(self) -> None:
         # initialize state with past month of data
         # compute initial long and short EMA ie. the respective SMA's
+        days = 365
+        response = self._queryOHLC(days)
+        daily = response['result'][self.pair]
+        dailyClose = np.array([float(dayOHLC[OHLC.close])
+                               for dayOHLC in daily])
         longEMA = sum(dailyClose[:LONG_EMA_LEN]) / LONG_EMA_LEN
         shortEMA = sum(
             dailyClose[SHORT_EMA_LEN: LONG_EMA_LEN]) / (LONG_EMA_LEN - SHORT_EMA_LEN)
         longSmoothingFactor = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
         shortSmoothingFactor = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
+        longSmoothing = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
+        shortSmoothing = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
+        for dayIdx in range(LONG_EMA_LEN, days):
+            closePrice = float(daily[dayIdx][OHLC.close])
+            shortEMA = (shortEMA * (1 - shortSmoothing) +
+                        (closePrice * shortSmoothing))
+            longEMA = (longEMA * (1 - longSmoothing) +
+                       (closePrice * longSmoothing))
 
         self.state = {
             'longEMA': longEMA,
-            'shortEMA': shortEMA
+            'shortEMA': shortEMA,
+            'bought': False
         }
-
-        schedule.every(1).seconds.do(self._analyze)
-        # schedule.every().day.at("18:00").do(self._analyze)
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
+        print(self.state)
+        self._analyze()
+        # schedule.every(1).seconds.do(self._analyze)
+        # # schedule.every().day.at("18:00").do(self._analyze)
+        # while True:
+        #     schedule.run_pending()
+        #     time.sleep(1)

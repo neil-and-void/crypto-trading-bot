@@ -15,13 +15,20 @@ KRAKEN_API_KEY = os.environ.get("KRAKEN_API_KEY")
 
 
 def main():
-    commands = {"test", "plot", "start"}
+    commands = {"test", "plot", "run"}
     if len(sys.argv) <= 1 or sys.argv[1] not in commands:
         print("Invalid argument. Pass 'help' as the first argument when running app.py to get more info")
         return
 
     # init api and bot
     krakenexAPI = krakenex.API(key=KRAKEN_API_KEY, secret=KRAKEN_PRIVATE_KEY)
+    config = {
+        "pair": "XETHZUSD",
+        "longSmoothing": "",
+        "shortSmoothing": "",
+        "shortEMALen": 5,
+        "longEMALen": 15
+    }
     pair = "XETHZUSD"  # TODO: change hardcoded pair
     neilBot = NeilBot(krakenexAPI, pair)
 
@@ -34,7 +41,6 @@ def main():
     elif arg == "test":
         results = neilBot.backtest(days)  # TODO: change hardcoded hours
         profits = results['wallet'] - results['initialWallet']
-        print(profits, results['wallet'], results['initialWallet'])
         percentage = profits / results['initialWallet']
         print('=== from {days} days ago to today ===\nprofits: {profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=days,
                                                                                                                    profits=profits, percentage=percentage))
@@ -42,7 +48,7 @@ def main():
     elif arg == "plot":
         neilBot.plot(days)  # TODO: change hardcoded hours
 
-    elif arg == "start":
+    elif arg == "run":
         neilBot.run()
 
 
