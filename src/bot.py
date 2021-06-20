@@ -55,11 +55,11 @@ class NeilBot():
         pastDay = response['result'][self.pair]
         print(pastDay)
 
-        # # query for latest day ohlc
+        # query for latest day ohlc
         longSmoothing = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
         shortSmoothing = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
-        # # compute EMA's
+        # compute EMA's
         closePrice = float(daily[dayIdx][OHLC.close])
         shortEMA = (self.state['shortEMA'] * (1 - shortSmoothing) +
                     (closePrice * shortSmoothing))
@@ -211,7 +211,7 @@ class NeilBot():
         fig, ax = plt.subplots()
 
         plt.xlabel('Dates (UTC)')
-        plt.ylabel(f'Hourly closing prices ({self.pair})')
+        plt.ylabel(f'Daily closing prices ({self.pair})')
         plt.plot(times, dailyClose,
                  label=f"{self.pair} close price", color="black")
         plt.plot(times, results['longEMAVals'],

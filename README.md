@@ -12,10 +12,10 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 # Setup
 * clone repo with `git clone <clone_url>`
 * initialize python virtual environment `python3 -m venv env`
+* start virtual environment `source env/bin/activate`
 * install dependencies `pip install -r requirements.txt`
 * Create Kraken account at https://www.kraken.com/en-gb/sign-up
 * Create and copy API and secret keys to .env as outlined in sample.env
-* start virtual environment `source env/bin/activate`
 * Setup complete!
 
 # Running
@@ -29,13 +29,13 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 
 # Configuration
 
-# Backtesting results
-## 3 months from June 20
+# Backtesting results for Ethereum in USD
+### 3 months from June 20
 * Starting funds: $200
 * Net gains: $171.91
 * profit (%): 85.958%
 ![4 month backtest plot](./images/figure1.png "4 month backtest plot")
-## 1 year from June 20
+### 1 year from June 20
 * Starting funds: $200
 * Net gains: $1502.31
 * profit (%): 751.158%
