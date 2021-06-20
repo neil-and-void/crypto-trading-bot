@@ -1,5 +1,5 @@
 # Crypto Trading Bot
-Crypto trading bot using a simple EMA 13-5 day cross indicator. Also provides backtesting and plotting functionality.
+My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. Note: read until the end if you want to use it live.
 
 # Technologies Used
 * Python
@@ -26,6 +26,8 @@ Crypto trading bot using a simple EMA 13-5 day cross indicator. Also provides ba
 * `test <DAYS>` run a backtest of `<DAYS>` length from today
 * `plot <DAYS>` plot the strategy and it's performance on an MPL plot within the period of `<DAYS>` days ago to now (just like the ones seen below)
 * `run` run the strategy live
+
+# Configuration
 
 # Backtesting results
 ## 3 months from June 20
