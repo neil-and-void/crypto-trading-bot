@@ -15,6 +15,6 @@ class OHLC(IntEnum):
     count = 7
 
 
-LONG_EMA_LEN = 13
 SHORT_EMA_LEN = 5
+LONG_EMA_LEN = 13
 SMOOTHING_FACTOR = 2

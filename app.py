@@ -2,10 +2,10 @@ import sys
 from os.path import join, dirname
 import os
 from datetime import datetime, date, timedelta
-
 from dotenv import load_dotenv
 
 from src.bot import NeilBot
+from src.constants import *
 import krakenex
 
 dotenv_path = join(dirname(__file__), "../.env")
@@ -26,18 +26,21 @@ def main():
     neilBot = NeilBot(krakenexAPI, pair)
 
     arg = sys.argv[1]
+    days = int(sys.argv[2])
+
     if arg == "help":
         print("""'test' - run strategy with past 3 months of closing prices\n'plot' - plot strategy for past 3 months\n'start' - run the strategy live""")
 
     elif arg == "test":
-        results = neilBot.backtest(365)  # TODO: change hardcoded hours
+        results = neilBot.backtest(days)  # TODO: change hardcoded hours
         profits = results['wallet'] - results['initialWallet']
+        print(profits, results['wallet'], results['initialWallet'])
         percentage = profits / results['initialWallet']
-        print('=== from {days} days ago to today ===\nprofits: {profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=120,
+        print('=== from {days} days ago to today ===\nprofits: {profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=days,
                                                                                                                    profits=profits, percentage=percentage))
 
     elif arg == "plot":
-        neilBot.plot(365)  # TODO: change hardcoded hours
+        neilBot.plot(days)  # TODO: change hardcoded hours
 
     elif arg == "start":
         neilBot.run()
