@@ -26,7 +26,7 @@ class NeilBot():
         self.state = {}
 
     def _buy(self) -> None:
-        """ Sell
+        """ buy
         """
         data = {
             "ordertype": "market",
@@ -34,6 +34,8 @@ class NeilBot():
             "pair": self.pair
         }
         response = self.client.query_private('AddOrder', data=data)
+        self.state['bought'] = True
+        print(response)
         print(response['result']['descr']['order'])
 
     def _sell(self) -> None:
@@ -45,6 +47,8 @@ class NeilBot():
             "pair": self.pair
         }
         response = self.client.query_private('AddOrder', data=data)
+        print(response)
+        self.state['bought'] = False
         print(response['result']['descr']['order'])
 
     def _analyze(self) -> None:
@@ -53,6 +57,7 @@ class NeilBot():
         """
         response = self._queryOHLC(1)  # past day OHLC
         pastDay = response['result'][self.pair]
+        print(self.state)
         print(pastDay)
 
         # query for latest day ohlc
@@ -60,18 +65,20 @@ class NeilBot():
         shortSmoothing = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
 
         # compute EMA's
-        closePrice = float(daily[dayIdx][OHLC.close])
+        closePrice = float(pastDay[0][OHLC.close])
         shortEMA = (self.state['shortEMA'] * (1 - shortSmoothing) +
                     (closePrice * shortSmoothing))
         longEMA = (self.state['longEMA'] * (1 - longSmoothing) +
                    (closePrice * longSmoothing))
 
         # check for buy signal
-        if not bought and longEMA < shortEMA:
+        if not self.state['bought'] and longEMA < shortEMA:
+            print('buy')
             self._buy()
 
         # sell signal or stop loss at 10%
-        if bought and (shortEMA < longEMA or coinQty * closePrice < 0.9 * (coinQty * buyPrice)):
+        if self.state['bought'] and (shortEMA < longEMA or coinQty * closePrice < 0.9 * (coinQty * buyPrice)):
+            print('buy')
             self._sell()
 
         # check for sell signal or stop loss
@@ -233,18 +240,17 @@ class NeilBot():
         plt.show()
 
     def run(self) -> None:
-        # initialize state with past month of data
-        # compute initial long and short EMA ie. the respective SMA's
+        # initialize state with past year of data
         days = 365
         response = self._queryOHLC(days)
         daily = response['result'][self.pair]
         dailyClose = np.array([float(dayOHLC[OHLC.close])
                                for dayOHLC in daily])
+
+        # compute initial long and short EMA ie. the respective SMA's
         longEMA = sum(dailyClose[:LONG_EMA_LEN]) / LONG_EMA_LEN
         shortEMA = sum(
             dailyClose[SHORT_EMA_LEN: LONG_EMA_LEN]) / (LONG_EMA_LEN - SHORT_EMA_LEN)
-        longSmoothingFactor = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
-        shortSmoothingFactor = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
         longSmoothing = SMOOTHING_FACTOR / (1 + LONG_EMA_LEN)
         shortSmoothing = SMOOTHING_FACTOR / (1 + SHORT_EMA_LEN)
         for dayIdx in range(LONG_EMA_LEN, days):
@@ -259,10 +265,8 @@ class NeilBot():
             'shortEMA': shortEMA,
             'bought': False
         }
-        print(self.state)
-        self._analyze()
-        # schedule.every(1).seconds.do(self._analyze)
-        # # schedule.every().day.at("18:00").do(self._analyze)
-        # while True:
-        #     schedule.run_pending()
-        #     time.sleep(1)
+        schedule.every(10).seconds.do(self._analyze)
+        # schedule.every().day.at("18:00").do(self._analyze)
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
