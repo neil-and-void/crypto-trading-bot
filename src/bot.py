@@ -1,7 +1,6 @@
 from typing import *
 import schedule
 from datetime import datetime as dt, date, timedelta
-import pandas as pd
 import time
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker

@@ -4,7 +4,6 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 # Technologies Used
 * Python
 * Numpy
-* Pandas
 * MatPlotLib
 * Kraken API
 * Docker
