@@ -1,17 +1,18 @@
 import sys
 from os.path import join, dirname
 import os
-from datetime import datetime, date, timedelta
+from datetime import datetime as dt, date, timedelta
 from dotenv import load_dotenv
+import cbpro
 
 from src.bot import NeilBot
 from src.constants import *
-import krakenex
 
 dotenv_path = join(dirname(__file__), "../.env")
 load_dotenv(dotenv_path)
-KRAKEN_PRIVATE_KEY = os.environ.get("KRAKEN_PRIVATE_KEY")
-KRAKEN_API_KEY = os.environ.get("KRAKEN_API_KEY")
+COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
+COINBASE_BASE_64_SECRET = os.environ.get("COINBASE_BASE_64_SECRET")
+COINBASE_PASSPHRASE = os.environ.get("COINBASE_PASSPHRASE")
 
 
 def main():
@@ -20,17 +21,18 @@ def main():
         print("Invalid argument. Pass 'help' as the first argument when running app.py to get more info")
         return
 
-    # init api and bot
-    krakenexAPI = krakenex.API(key=KRAKEN_API_KEY, secret=KRAKEN_PRIVATE_KEY)
+    # Feel free to play with these values #
     config = {
-        "pair": "XETHZUSD",
-        "longSmoothing": "",
-        "shortSmoothing": "",
+        "pair": "ETH-USD",
+        "smoothingFactor": 2,
         "shortEMALen": 5,
-        "longEMALen": 15
+        "longEMALen": 13
     }
-    pair = "XETHZUSD"  # TODO: change hardcoded pair
-    neilBot = NeilBot(krakenexAPI, pair)
+    publicClient = cbpro.PublicClient()
+    authenticatedClient = cbpro.AuthenticatedClient(
+        COINBASE_API_KEY, COINBASE_BASE_64_SECRET, COINBASE_PASSPHRASE, api_url="https://api-public.sandbox.pro.coinbase.com")
+    # init api and bot
+    neilBot = NeilBot(config, publicClient, authenticatedClient)
 
     arg = sys.argv[1]
     days = int(sys.argv[2])

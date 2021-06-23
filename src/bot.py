@@ -1,28 +1,22 @@
 from typing import *
 import schedule
-from datetime import datetime, date, timedelta
+from datetime import datetime as dt, date, timedelta
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
+import cbpro
 
 from src.constants import *
-from krakenex.api import API
 
 
 class NeilBot():
-    def __init__(self, client: API, pair: str):
-        """Inits NeilBot with an API client and coin-currency pair
-
-        :param client: client to interface with a coin exchange
-        :type client: API
-        :param pair: coin-currency pair according to Kraken's naming scheme ex. Ethereum in USD = 'XETHZUSD'
-        :type pair: str
-        """
-        self.client = client
-        self.pair = pair
-        self.backtestResults = {}
+    def __init__(self, config: dict, publicClient: cbpro.PublicClient, authenticatedClient: cbpro.AuthenticatedClient):
+        """Inits NeilBot with an API client and coin-currency pair"""
+        self.config = config
+        self.publicClient = publicClient
+        self.authenticatedClient = authenticatedClient
         self.state = {}
 
     def _buy(self) -> None:
@@ -83,21 +77,18 @@ class NeilBot():
 
         # check for sell signal or stop loss
 
-    def _queryOHLC(self, days) -> dict:
-        """get OHLC period data of length days
-
-        :param days: [description]
-        :type days: [type]
-        :return: [description]
-        :rtype: dict
+    def _queryOHLC(self, days=200) -> list[list[OHLC]]:
+        """get OHLC data between the period of start and end
         """
-        interval = 1440  # 1 day in minutes
-        today = datetime.today()
-        periodLen = timedelta(days=days)
-        period = today - periodLen
-        periodTimeStamp = int(period.timestamp())
-        return self.client.query_public(
-            f'OHLC?pair={self.pair}&interval={interval}&since={periodTimeStamp}')
+        today = dt.utcnow().today()
+        end = today.date()
+
+        t_delta = timedelta(days=days-1)
+
+        start = today - t_delta
+        start = start.date()
+
+        return self.publicClient.get_product_historic_rates('ETH-USD', granularity=86400, start=start, end=end)
 
     def _ema(self, periodIdx, close, periodLen, smoothing) -> float:
         """ Compute ema
@@ -128,8 +119,7 @@ class NeilBot():
         :param days: number of days to backtest over from today
         :type days: int
         """
-        response = self._queryOHLC(days)
-        daily = response['result'][self.pair]
+        daily = self._queryOHLC(days)
 
         dailyClose = np.array([float(dayOHLC[OHLC.close])
                                for dayOHLC in daily])
@@ -208,19 +198,21 @@ class NeilBot():
         :type days: int
         """
         results = self.backtest(days)
-        response = self._queryOHLC(days)
-        daily = response['result'][self.pair]
+        daily = self._queryOHLC(days)
         dailyClose = np.array([float(dayOHLC[OHLC.close])
                                for dayOHLC in daily])
-        times = np.array([datetime.utcfromtimestamp(dayOHLC[OHLC.time]).strftime('%b %d %y %H:%M')
+        print(len(daily))
+        times = np.array([dt.utcfromtimestamp(dayOHLC[OHLC.time]).strftime('%b %d %y %H:%M')
                          for dayOHLC in daily])
 
         fig, ax = plt.subplots()
 
+        # print(len(results['longEMAVals']), len(results['shortEMAVals']), len(
+        #     results['buys']), len(results['sells']), len(times))
         plt.xlabel('Dates (UTC)')
-        plt.ylabel(f'Daily closing prices ({self.pair})')
+        plt.ylabel(f"Daily closing prices ({self.config['pair']})")
         plt.plot(times, dailyClose,
-                 label=f"{self.pair} close price", color="black")
+                 label=f"{self.config['pair']} close price", color="black")
         plt.plot(times, results['longEMAVals'],
                  label=f"{LONG_EMA_LEN} EMA", color="blue")
         plt.plot(times, results['shortEMAVals'],
@@ -236,7 +228,7 @@ class NeilBot():
         fig.autofmt_xdate()
         ax.autoscale()
         plt.title(
-            f'EMA {LONG_EMA_LEN}/{SHORT_EMA_LEN} Day Cross with Buy and Sell Indicators for {self.pair} ({days} days)')
+            f"EMA {LONG_EMA_LEN}/{SHORT_EMA_LEN} Day Cross with Buy and Sell Indicators for {self.config['pair']} ({days} days)")
         plt.show()
 
     def run(self) -> None:
