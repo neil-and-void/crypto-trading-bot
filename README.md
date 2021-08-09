@@ -24,7 +24,8 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 * `help` list commands
 * `test <DAYS>` run a backtest of `<DAYS>` length from today
 * `plot <DAYS>` plot the strategy and it's performance on an MPL plot within the period of `<DAYS>` days ago to now (just like the ones seen below)
-* `run` run the strategy live *NOTE* The bot is not configured by default to run live. If you want to use this bot for live trading, you have to figure it out yourself.
+* `run` run the strategy live *NOTE* I have not written the code to allow the bot to run live. If you want to do so, you have to figure it out for yourself.
+
 
 # Configuration
 
