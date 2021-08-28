@@ -1,5 +1,5 @@
 # Crypto Trading Bot
-My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. Note: I don't recommend using this bot to trade live.
+My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. Note: I don't recommend using this bot to trade live as this was just for fun, however if you do, you have to figure out how to do all the coinbase setup as an exercise.
 
 # Technologies Used
 * Python
