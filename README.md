@@ -13,7 +13,7 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 * initialize python virtual environment `python3 -m venv env`
 * start virtual environment `source env/bin/activate`
 * install dependencies `pip install -r requirements.txt`
-* Create Kraken account at https://www.kraken.com/en-gb/sign-up
+* Create Coinbase and Coinbase Pro account
 * Create and copy API and secret keys to .env as outlined in sample.env
 * Setup complete!
 
