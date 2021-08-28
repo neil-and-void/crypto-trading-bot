@@ -48,9 +48,11 @@ def main():
         days = int(sys.argv[2])
         results = neilBot.backtest(days)  # TODO: change hardcoded hours
         profits = results['wallet'] - results['initialWallet']
+        initialWallet = results['initialWallet']
+        endWallet = results['wallet']
         percentage = profits / results['initialWallet']
-        print('=== from {days} days ago to today ===\nprofits: {profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=days,
-                                                                                                                   profits=profits, percentage=percentage))
+        print('=== from {days} days ago to today ===\nstarting wallet: ${initialWallet:.2f}\nend wallet: ${endWallet:.2f}\nprofits: ${profits:.3f}\nprofit (%): {percentage:.3%}'.format(days=days, endWallet=endWallet,
+                                                                                                                                                                                         profits=profits, percentage=percentage, initialWallet=initialWallet))
 
     elif arg == "plot":
         days = int(sys.argv[2])
