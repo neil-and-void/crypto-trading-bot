@@ -1,17 +1,15 @@
 FROM ubuntu:18.04
 
-COPY . /usr/src/trading-bot
+COPY . /trading-bot
 
-WORKDIR /usr/src/trading-bot
+WORKDIR /trading-bot
 
 RUN set -xe \
     && apt-get update \
-    && apt-get -y install python-pip
+    && apt-get -y install python3-pip
 
-SHELL ["pip", "--version"]
+RUN pip3 install pip --upgrade
 
-RUN pip install pip --upgrade
+RUN pip3 install -r requirements.txt
 
-RUN pip install -r requirements.txt
-
-CMD [ "python", "bot.py", "run", "1" ]
+CMD [ "python3", "app.py", "run", "1" ]
