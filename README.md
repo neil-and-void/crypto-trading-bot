@@ -30,7 +30,6 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 # Testing
 `python -m unittest discover`
 
-# Configuration
 
 # Backtesting results for Ethereum in USD
 ### 3 months from June 20, 2021
