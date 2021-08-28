@@ -33,12 +33,12 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 # Configuration
 
 # Backtesting results for Ethereum in USD
-### 3 months from June 20
+### 3 months from June 20, 2021
 * Starting funds: $200
 * Net gains: $171.91
 * profit (%): 85.958%
 ![4 month backtest plot](./images/figure1.png "4 month backtest plot")
-### 1 year from June 20
+### 1 year from June 20, 2021
 * Starting funds: $200
 * Net gains: $1502.31
 * profit (%): 751.158%
