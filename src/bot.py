@@ -256,7 +256,6 @@ class NeilBot():
 
         while True:
             cur_time = dt.utcnow().strftime("%H")
-            print(cur_time)
             if cur_time == "00":
                 self._analyze()
             time.sleep(TWENTY_FOUR_HOURS)
