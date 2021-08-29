@@ -12,4 +12,4 @@ RUN pip3 install pip --upgrade
 
 RUN pip3 install -r requirements.txt
 
-CMD [ "python3", "app.py", "run", "1" ]
+CMD [ "python3", "app.py", "run"]
