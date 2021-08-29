@@ -56,7 +56,7 @@ def main():
 
     elif arg == "plot":
         days = int(sys.argv[2])
-        neilBot.plot(days)  # TODO: change hardcoded hours
+        neilBot.plot(days)
 
     elif arg == "run":
         neilBot.run()
