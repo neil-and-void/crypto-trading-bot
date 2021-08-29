@@ -1,12 +1,12 @@
-FROM ubuntu:18.04
+FROM python:3.9-slim-buster
 
 COPY . /trading-bot
 
 WORKDIR /trading-bot
 
-RUN set -xe \
-    && apt-get update \
-    && apt-get -y install python3-pip
+RUN apt-get update \
+&& apt-get install gcc -y \
+&& apt-get clean
 
 RUN pip3 install pip --upgrade
 
