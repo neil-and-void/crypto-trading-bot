@@ -3,7 +3,7 @@ from enum import IntEnum
 
 class OHLC(IntEnum):
     """
-    names with the corresponding indices of data in OHLC response data from Kraken API
+    names with the corresponding indices of data in OHLC response data from Coinbase API
     """
     time = 0
     low = 1
