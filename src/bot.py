@@ -13,7 +13,7 @@ from src.constants import *
 
 
 class NeilBot():
-    def __init__(self, config: Dict, publicClient: cbpro.PublicClient, authClient: cbpro.AuthenticatedClient):
+    def __init__(self):
         """Inits NeilBot with an API client and coin-currency pair"""
         self.config = config
         self.publicClient = publicClient
@@ -26,28 +26,13 @@ class NeilBot():
             "crossCount": 0
         }
 
-    def _sendEmail(self):
-        # TODO: implement email notifications
+    def _simple_moving_average(self):
         pass
 
-    def _buy(self, amount) -> None:
-        """ Buy
-        """
-        response = self.authClient.place_market_order(size=amount,
-                                                      side='buy',
-                                                      product_id=self.config['pair'])
-        return response
+    def _rsi(self):
+        pass
 
-    def _sell(self, amount) -> None:
-        """ Sell
-        """
-        response = self.authClient.place_market_order(
-            size=amount,
-            side='sell',
-            product_id=self.config['pair'])
-        return response
-
-    def _analyze(self) -> None:
+    def analyze(self) -> None:
         """
         Analyze for the occurrence of a buy or sell signal for today
         """
@@ -91,21 +76,8 @@ class NeilBot():
             available_eth = "{:.8f}".format(float(eth_account["available"]))
             self._sell(available_eth)
 
-    def _queryOHLC(self, days) -> List[List[OHLC]]:
-        """get OHLC data in the period of number of days from now
-        """
-        today = dt.utcnow().today()
-        end = today.date()
-
-        t_delta = timedelta(days=days-1)
-
-        start = today - t_delta
-        start = start.date()
-
-        daily = self.publicClient.get_product_historic_rates(
-            self.config["pair"], granularity=86400, start=start, end=end)
-        daily.reverse()
-        return daily
+    def _compute_ema(self, ema_len, ohlc_data, smoothing_factor):
+        ema = sum(ohlc_data[ema_len]) / self.config[ema_len]
 
     def backtest(self, days) -> Dict:
         """backtest the strategy and get results for it
