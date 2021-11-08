@@ -1,48 +1,41 @@
-from datetime import datetime as dt, date, timedelta
-
+from datetime import datetime as dt
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 
+from src import constants, config
+
 
 class Plotter:
-    def __init__(self, **kwargs):
-        self.bot = kwargs.get('bot', None)
-
-    def generate_plot(self):
+    def generate_plot(self, ohlc_data, buys, sells):
         """plot the long and short EMA's on an OHLC candlestick mpl plot
 
         :param days: number of days to backtest over from today
         :type days: int
         """
-        results = self.backtest(days)
-        daily = self._queryOHLC(days)
-        dailyClose = np.array([float(dayOHLC[OHLC.close])
-                               for dayOHLC in daily])
+        hourly_close = np.array([float(ohlc[constants.CLOSE])
+                                 for ohlc in ohlc_data])
 
-        times = np.array([dt.utcfromtimestamp(dayOHLC[OHLC.time]).strftime('%b %d %y %H:%M')
-                          for dayOHLC in daily])
+        times = np.array([dt.utcfromtimestamp(ohlc[constants.CLOSE_TIME]).strftime('%b %d %y %H:%M')
+                          for ohlc in ohlc_data])
 
         fig, ax = plt.subplots()
 
         plt.xlabel('Dates (UTC)')
-        plt.ylabel(f"Daily closing prices ({self.config['pair']})")
-        plt.plot(times, dailyClose,
+        plt.ylabel(f"hourly closing prices ({config.COIN_PAIR})")
+        plt.plot(times, hourly_close,
                  label=f"{self.config['pair']} close price", color="black")
-        plt.plot(times, results['longEMAVals'],
-                 label=f"{self.config['longEMALen']} EMA", color="blue")
-        plt.plot(times, results['shortEMAVals'],
-                 label=f"{self.config['shortEMALen']} EMA", color="orange")
-        plt.plot(times, results['buys'],
+        plt.plot(times, buys,
                  label="Buy Indicator", marker=".", linestyle='None', color="green", markersize=10)
-        plt.plot(times, results['sells'],
+        plt.plot(times, sells,
                  label="Sell Indicator", marker=".", linestyle='None', color="red", markersize=10)
 
         plt.legend()
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(days // 12))
+        ax.xaxis.set_major_locator(
+            ticker.MultipleLocator(len(ohlc_data) // 12))
         plt.grid()
         fig.autofmt_xdate()
         ax.autoscale()
         plt.title(
-            f"EMA {self.config['longEMALen']}/{self.config['shortEMALen']} Day Cross with Buy and Sell Indicators for {self.config['pair']} ({days} days)")
+            f"{config.EMA_PERIOD}-EMA and {config.RSI_PERIOD} period RSI lookback with Buy and Sell Indicators for {self.config['pair']}")
         plt.show()

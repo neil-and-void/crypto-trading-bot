@@ -140,4 +140,4 @@ cython_debug/
 .vscode
 data.*
 
-/config.py
+config.py

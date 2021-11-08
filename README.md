@@ -1,5 +1,5 @@
 # Crypto Trading Bot
-My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. **Note**: I don't recommend using this bot to trade live as this was just for fun, however if you do, you have to figure out how to do all the coinbase setup as an exercise.
+My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. **Note**: I don't recommend using this bot to trade live as this was just for fun, however if you do, you have to figure out how to do all the coinbase setup as an exercise. The strategy used takes a long position when... The bot closes a long position
 
 # Technologies Used
 * Python
@@ -22,7 +22,7 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 
 # Commands
 * `help` list commands
-* `test <DAYS>` run a backtest of `<DAYS>` length from today
+* `backtest <DAYS>` run a backtest of `<DAYS>` length from today
 * `plot <DAYS>` plot the strategy and it's performance on an MPL plot within the period of `<DAYS>` days ago to now (just like the ones seen below)
 * `run` run the strategy live *NOTE* I have not written the code to allow the bot to run live. If you want to do so, you have to figure it out for yourself.
 
