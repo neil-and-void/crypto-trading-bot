@@ -11,28 +11,37 @@ from src.bot import NeilBot
 
 
 if __name__ == "__main__":
-    binance = Binance(config.BINANCE_API_KEY, config.BINANCE_SECRET_KEY)
-    neil_bot = NeilBot(smoothing=config.SMOOTHING_FACTOR,
-                       ema_period=config.EMA_PERIOD,
-                       rsi_period=config.RSI_PERIOD)
-
     optlist, _ = getopt.getopt(sys.argv[1:], 'b:p:h:', [
-                               'backtest', 'plot', 'help'])
+                               'backtest', 'plot', 'help', 'period'])
+    binance = Binance(config.BINANCE_API_KEY, config.BINANCE_SECRET_KEY)
+    neil_bot = NeilBot(
+        long_smoothing=config.LONG_EMA_SMOOTHING,
+        long_ema_period=config.LONG_EMA_PERIOD,
+        short_smoothing=config.SHORT_EMA_SMOOTHING,
+        short_ema_period=config.SHORT_EMA_PERIOD,
+        rsi_period=config.RSI_PERIOD,
+        rsi_threshold=config.RSI_THRESHOLD)
 
     plot = False
-    for opt, _ in optlist:
-        if opt == '--backtest':
+    buys = []
+    sells = []
+    for opt, arg in optlist:
+        print(opt)
+        if opt in ('--backtest'):
             backtester = Backtester(wallet=200, coin_qty=0)
             ohlc = binance.get_ohlc(
                 'ETHUSDT', Client.KLINE_INTERVAL_1HOUR, limit=100)
-            buys, sells = backtester.backtest(ohlc, neil_bot)
-            if opt == '--plots':
-                plotter = Plotter()
-                plotter.generate_plot(ohlc, buys, sells)
+            buys, sells = backtester.backtest(ohlc, neil_bot, arg)
+            plotter = Plotter()
+            plotter.generate_plot(ohlc, buys, sells)
 
-        elif opt in ("-help"):
+        elif opt in ('--plot'):
+            print('hi')
+            plot = True
+        elif opt in ("--help"):
             print("Examples of Usage:")
-            print("Print backtest results: main.py --backtest")
+            print("Print backtest results for past 90 periods: main.py --backtest 90")
             print(
-                "Generate backtest results on MPL plot: main.py --backtest --plot")
-            exit()
+                "Generate backtest results on MPL plot for 90 periods: main.py --backtest 90 --plot")
+
+    exit()

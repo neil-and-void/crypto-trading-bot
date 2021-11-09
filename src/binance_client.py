@@ -8,12 +8,35 @@ class Binance:
         self.client = Client(api_key, secret_key)
 
     def buy(self, quantity, symbol):
-        return self.client.new_order({"type": "BUY", "symbol": symbol, "quantity": quantity, 'side': "MARKET"});
+        """ Issue a buy order for the coin with the given symbol
+
+        :param quantity: [description]
+        :param symbol: [description]
+        :return: [description]
+        """
+        return self.spot_client.new_order(type="BUY", symbol=symbol, quantity=quantity, side="MARKET")
 
     def sell(self, quantity, symbol):
-        return self.client.new_order({"type": "SELL", "symbol": symbol, "quantity": quantity, 'side': "MARKET"});
+        """ Issue a buy order for the coin with the given symbol
+
+        :param quantity: [description]
+        :param symbol: [description]
+        :return: [description]
+        """
+        return self.spot_client.new_order(type="SELL", symbol=symbol, quantity=quantity, side="MARKET")
 
     def get_ohlc(self, symbol, interval, limit):
+        """ Get OHLC data about a coin in the given interval
+
+        :param symbol: [description]
+        :type symbol: [type]
+        :param interval: [description]
+        :type interval: [type]
+        :param limit: [description]
+        :type limit: [type]
+        :return: [description]
+        :rtype: [type]
+        """
         return self.client.get_klines(symbol=symbol, interval=interval, limit=limit)
 
     def get_wallet(self, timestamp):
@@ -21,4 +44,3 @@ class Binance:
 
     def get_account(self):
         return self.spot_client.account()
-
