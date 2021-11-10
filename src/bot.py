@@ -1,102 +1,124 @@
 from typing import *
-from datetime import datetime as dt
-import time
+from collections import deque
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import numpy as np
-
-from src import constants
+from src.constants import *
 
 
 class NeilBot():
     def __init__(self, **kwargs):
         """ initialize bot with config kwargs and initial state
+
+        ! If you change the strategy, config kwargs will need to change too
+
+        Args:
+            **long_smoothing (int): Long EMA smoothing constant
+            **long_ema_period (int): Length of the long EMA period
+            **short_smoothing (int): Short EMA smoothing constant
+            **short_ema_period (int): Length of the short EMA period
+            **rsi_period (int): Length of the RSI lookback
+            **rsi_threshold (float): Threshold value for RSI
         """
+        # config variables
         self._long_smoothing = kwargs['long_smoothing']
         self._long_ema_period = kwargs['long_ema_period']
         self._short_smoothing = kwargs['short_smoothing']
         self._short_ema_period = kwargs['short_ema_period']
         self._rsi_period = kwargs['rsi_period']
         self._rsi_threshold = kwargs['rsi_threshold']
-        self._state = {
-            "prev_long_ema": 0,
-            "prev_short_ema": 0,
-            "prev_avg_gain": 0,
-            "prev_avg_loss": 0,
-            "prev_price": 0
-        }
+        # state variables
+        self._prev_long_ema = 0
+        self._prev_short_ema = 0
+        self._prev_gains = None
+        self._prev_losses = None
 
     def _ema(self, price, prev_ema, smoothing, period):
         """ get the ema of the current period
 
-        :param price: [description]
-        :param prev_ema: [description]
-        :return: float value representing the EMA
+        Args:
+            price (float): Closing price of coin
+            prev_ema (float): Previously computed EMA
+            smoothing (int): Smoothing constant
+            period (int): period length of EMA
+
+        Returns:
+            float: EMA as a float
         """
         return (price * (smoothing / (1 + period))) + (prev_ema * (1 - (smoothing / (1 + period))))
 
-    def _rsi(self, ohlc, prev_avg_gain, prev_avg_loss):
+    def _rsi(self, ohlc, prev_gains, prev_losses):
         """ get rsi of the current period
 
-        :param price: [description]
-        :param prev_avg_gain: [description]
-        :param prev_avg_loss: [description]
-        :return: float value representing the RSI
+        Args:
+            ohlc (List): Array of ohlc data
+            prev_gains (deque): deque of a window of the gains in the the last period length of ohlc data
+            prev_losses (deque): deque of a window of the losses in the the last period length of ohlc data 
+
+        Returns:
+            float: float value representing the RSI
         """
-        open = float(ohlc[constants.BUY])
-        close = float(ohlc[constants.CLOSE])
-        cur_gain = 0
-        cur_loss = 0
+        open = float(ohlc[BUY])
+        close = float(ohlc[CLOSE])
+        # slide window forward
         if close < open:
-            cur_gain = open - close
-        elif open > close:
-            cur_loss = abs(open - close)
-        relative_strength = ((prev_avg_gain * 13) + cur_gain) / \
-            ((prev_avg_loss * 13) + cur_loss)
+            self._prev_losses.append(open - close)
+            self._prev_gains.append(0)
+        elif open < close:
+            self._prev_gains.append(close - open)
+            self._prev_losses.append(0)
+        self._prev_gains.popleft()
+        self._prev_losses.popleft()
+
+        relative_strength = (sum(prev_gains) / sum(prev_losses))
         return 100 - (100 / (1 + relative_strength))
 
     def initialize_values(self, ohlc_data):
-        """ perform initial calculations for indicators
+        """ populate state with initial values needed for indicators
 
-        :param ohlc_data: Array of OHLC data
+        Args:
+            ohlc_data (List): Array of OHLC data
         """
         # initial ema step
-        self._state['prev_short_ema'] = sum([float(ohlc[constants.CLOSE])
-                                             for ohlc in ohlc_data[-self._short_ema_period:]]) / self._short_ema_period
-
-        self._state['prev_long_ema'] = sum([float(ohlc[constants.CLOSE])
-                                            for ohlc in ohlc_data[-self._long_ema_period:]]) / self._long_ema_period
-        # RSI step 1
-        gains = []
-        losses = []
+        self._prev_short_ema = sum([float(ohlc[CLOSE])
+                                    for ohlc in ohlc_data[-self._short_ema_period:]]) / self._short_ema_period
+        self._prev_long_ema = sum([float(ohlc[CLOSE])
+                                   for ohlc in ohlc_data[-self._long_ema_period:]]) / self._long_ema_period
+        # initial rsi step, use deque for sliding window
+        self._prev_gains = deque()
+        self._prev_losses = deque()
         for ohlc in ohlc_data[-self._rsi_period:]:
-            close = float(ohlc[constants.CLOSE])
-            open = float(ohlc[constants.OPEN])
-            # gained
+            close = float(ohlc[CLOSE])
+            open = float(ohlc[OPEN])
             if open < close:
-                gains.append(close - open)
-            # lost
+                self._prev_gains.append(close - open)
+                # ensures same window length as prev gains
+                self._prev_losses.append(0)
             elif close < open:
-                losses.append(abs(close - open))
-        self._state['prev_avg_loss'] = sum(losses) / self._rsi_period
-        self._state['prev_avg_gain'] = sum(gains) / self._rsi_period
+                self._prev_losses.append(abs(close - open))
+                # ensures same window length as prev losses
+                self._prev_gains.append(0)
 
     def analyze(self, ohlc) -> None:
-        """ Analyze for the occurrence of a buy or sell signal for this period
+        """ Analyze for the occurrence of a buy or sell signal for this ohlc
 
-        :return: Buy or sell constant to indicate action to be taken
+        Args:
+            ohlc (List): ohlc of the current period
+
+        Returns:
+            int: Buy or sell constant to indicate action to be taken
         """
+        # ! Implement your custom strategy by replacing the body of this method
         long_ema = self._ema(
-            float(ohlc[constants.CLOSE]), self._state['prev_long_ema'], self._long_smoothing, self._long_ema_period)
-        self._state['prev_long_ema'] = long_ema
+            float(ohlc[CLOSE]), self._prev_long_ema, self._long_smoothing, self._long_ema_period)
         short_ema = self._ema(
-            float(ohlc[constants.CLOSE]), self._state['prev_short_ema'], self._short_smoothing, self._short_ema_period)
-        self._state['prev_short_ema'] = short_ema
-        rsi = self._rsi(
-            ohlc, self._state['prev_avg_gain'], self._state['prev_avg_loss'])
-        # compute signal based on strategy
-        if short_ema > long_ema and rsi > self._rsi_threshold:
-            return constants.BUY
-        elif long_ema < short_ema or rsi < self._rsi_threshold:
-            return constants.SELL
+            float(ohlc[CLOSE]), self._prev_short_ema, self._short_smoothing, self._short_ema_period)
+        rsi = self._rsi(ohlc, self._prev_gains, self._prev_losses)
+
+        # update previous EMA's for next calculation
+        self._prev_short_ema = short_ema
+        self._prev_long_ema = long_ema
+
+        # Check rsi first to ensure that it has crossed before ema values have crossed
+        if rsi > self._rsi_threshold and long_ema < short_ema:
+            return BUY
+        elif long_ema > short_ema or rsi < self._rsi_threshold:
+            return SELL

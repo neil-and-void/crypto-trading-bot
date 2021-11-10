@@ -1,37 +1,39 @@
-from src import constants
+from src.constants import *
+import numpy as np
 
 
 class Backtester:
-    def __init__(self, **kwargs):
-        """ Initialize backtester with values for wallet and coin_qty to run backtest with
-        """
-        self.wallet = kwargs['wallet']
-        self.coin_qty = kwargs['coin_qty']
-
-    def backtest(self, ohlc_data, bot, length):
+    def backtest(self, ohlc_data, bot, min_initialization_length):
         """ Run backtest length amount of periods
 
-        :param ohlc_data: [description]
-        :type ohlc_data: [type]
-        :param bot: [description]
-        :type bot: [type]
-        :return: [description]
-        :rtype: [type]
+        :param ohlc_data: array of ohlc data to run backtest against
+        :param bot: agent to run backtest with
+        :return: array of buy and sells
+        """
+        """ Run backtest length amount of periods
+
+        Args:
+            ohlc_data (List): array of ohlc data to run bot against
+            bot (NeilBot): Agent to run backtest with
+            min_initialization_length (int): minimum length of ohlc data to fetch for initializing values in the bot
+
+        Returns:
+            Tuple[List, List]: Tuple of buy and sell prices the bot indicated signals for
         """
         buys = []
         sells = []
 
-        bot.initialize_values(ohlc_data)
+        bot.initialize_values(ohlc_data[:min_initialization_length])
 
-        for ohlc in ohlc_data:
-            indicator = bot.analyze(ohlc)
-            if indicator == constants.BUY:
-                buys.append(ohlc[constants.CLOSE])
-                sells.append(None)
-            elif indicator == constants.SELL:
-                buys.append(None)
-                sells.append(ohlc[constants.CLOSE])
+        for ohlc in ohlc_data[min_initialization_length:]:
+            signal = bot.analyze(ohlc)
+            if signal == BUY:
+                buys.append(float(ohlc[CLOSE]))
+                sells.append(np.nan)
+            elif signal == SELL:
+                buys.append(np.nan)
+                sells.append(float(ohlc[CLOSE]))
+            else:
+                sells.append(np.nan)
+                buys.append(np.nan)
         return buys, sells
-
-    def print_results(self, hi):
-        print(self.wallet, self.coin_qty)

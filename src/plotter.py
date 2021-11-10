@@ -7,16 +7,19 @@ from src import constants, config
 
 
 class Plotter:
-    def generate_plot(self, ohlc_data, buys, sells):
-        """plot the long and short EMA's on an OHLC candlestick mpl plot
+    def generate_plot(self, ohlc_data, buys, sells, pair):
+        """ Plot buy and sell signals on ohlc data 
 
-        :param days: number of days to backtest over from today
-        :type days: int
+        Args:
+            ohlc_data (List): List of ohlc data for the coin pari
+            buys (List): Prices the bot indicated buy signals for
+            sells (List): Prices the bot indicated sell signals for
+            pair (String): Coin pair 
         """
         hourly_close = np.array([float(ohlc[constants.CLOSE])
                                  for ohlc in ohlc_data])
 
-        times = np.array([dt.utcfromtimestamp(ohlc[constants.CLOSE_TIME]).strftime('%b %d %y %H:%M')
+        times = np.array([dt.utcfromtimestamp(float(ohlc[constants.CLOSE_TIME])/1000).strftime('%b %d %y %H:%M')
                           for ohlc in ohlc_data])
 
         fig, ax = plt.subplots()
@@ -24,11 +27,11 @@ class Plotter:
         plt.xlabel('Dates (UTC)')
         plt.ylabel(f"hourly closing prices ({config.COIN_PAIR})")
         plt.plot(times, hourly_close,
-                 label=f"{self.config['pair']} close price", color="black")
-        plt.plot(times, buys,
-                 label="Buy Indicator", marker=".", linestyle='None', color="green", markersize=10)
-        plt.plot(times, sells,
-                 label="Sell Indicator", marker=".", linestyle='None', color="red", markersize=10)
+                 label=f"{pair} close price", color="black")
+        plt.plot(times, buys, label="Buy Indicator", marker=".",
+                 linestyle='None', color="green", markersize=10)
+        plt.plot(times, sells, label="Sell Indicator", marker=".",
+                 linestyle='None', color="red", markersize=10)
 
         plt.legend()
         ax.xaxis.set_major_locator(
@@ -37,5 +40,5 @@ class Plotter:
         fig.autofmt_xdate()
         ax.autoscale()
         plt.title(
-            f"{config.EMA_PERIOD}-EMA and {config.RSI_PERIOD} period RSI lookback with Buy and Sell Indicators for {self.config['pair']}")
+            f"Buy and Sell Indicators for {pair}")
         plt.show()
