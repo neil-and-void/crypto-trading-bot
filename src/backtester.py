@@ -6,12 +6,6 @@ class Backtester:
     def backtest(self, ohlc_data, bot, min_initialization_length):
         """ Run backtest length amount of periods
 
-        :param ohlc_data: array of ohlc data to run backtest against
-        :param bot: agent to run backtest with
-        :return: array of buy and sells
-        """
-        """ Run backtest length amount of periods
-
         Args:
             ohlc_data (List): array of ohlc data to run bot against
             bot (NeilBot): Agent to run backtest with

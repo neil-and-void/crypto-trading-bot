@@ -68,12 +68,14 @@ if __name__ == "__main__":
                     # buy as much base currency with quote as we can
                     busd_balance = binance.get_coin_balance(
                         config.QUOTE_CURRENCY, 10000)
+                    print(f'BUY SIGNAL: ${ohlc[CLOSE]}')
                     # binance.buy()
                     pass
                 elif signal == SELL:
                     # sell as much quote currency currency as we can
                     eth_balance = binance.get_coin_balance(
                         config.BASE_CURRENCY, 10000)
+                    print(f'SELL SIGNAL: ${ohlc[CLOSE]}')
                     # binance.sell()
                     pass
                 time.sleep(config.PERIOD_LENGTH)
