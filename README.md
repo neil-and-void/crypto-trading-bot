@@ -23,7 +23,7 @@ My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strat
 # Commands
 * `-h` list example
 * `-b <DAYS>` run a backtest of `<DAYS>` length from today
-* `-r` run the strategy live *NOTE* I have not written the code to allow the bot to run live. If you want to do so, you have to figure it out for yourself.
+* `-r` run the strategy live
 
 # Backtesting Results
 
