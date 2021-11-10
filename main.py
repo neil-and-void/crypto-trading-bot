@@ -39,13 +39,12 @@ if __name__ == "__main__":
                 exit(1)
             ohlc = binance.get_ohlc(
                 config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=period_length)
-            backtester = Backtester(wallet=200, coin_qty=0)
+            backtester = Backtester()
             buys, sells = backtester.backtest(
                 ohlc, neil_bot, min_initialization_length)
             plotter = Plotter()
-            print(len(buys), len(sells), len(ohlc[min_initialization_length:]))
             plotter.generate_plot(
-                ohlc[min_initialization_length:], buys, sells, config.COIN_PAIR)
+                ohlc[min_initialization_length:], buys, sells, config.COIN_PAIR, period_length, Client.KLINE_INTERVAL_1HOUR)
 
             # busd_balance = binance.get_coin_balance('BUSD', 10000)
             # res = binance.buy(Decimal(busd_balance), 'ETHBUSD')

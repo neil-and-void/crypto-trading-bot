@@ -7,13 +7,15 @@ from src import constants, config
 
 
 class Plotter:
-    def generate_plot(self, ohlc_data, buys, sells, pair):
+    def generate_plot(self, ohlc_data, buys, sells, pair, length, interval):
         """ Plot buy and sell signals on ohlc data 
 
         Args:
             ohlc_data (List): List of ohlc data for the coin pari
             buys (List): Prices the bot indicated buy signals for
             sells (List): Prices the bot indicated sell signals for
+            length (int): Number of intervals
+            interval (String): Interval type
             pair (String): Coin pair 
         """
         hourly_close = np.array([float(ohlc[constants.CLOSE])
@@ -40,5 +42,5 @@ class Plotter:
         fig.autofmt_xdate()
         ax.autoscale()
         plt.title(
-            f"Buy and Sell Indicators for {pair}")
+            f"Buy and Sell Indicators for {pair} over last {length} {interval} periods")
         plt.show()
