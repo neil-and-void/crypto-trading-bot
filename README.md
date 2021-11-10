@@ -1,11 +1,10 @@
 # Crypto Trading Bot
-My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a stop loss set at 10%. Also provides backtesting and plotting functionality. **Note**: I don't recommend using this bot to trade live as this was just for fun, however if you do, you have to figure out how to do all the coinbase setup as an exercise. The strategy used takes a long position when... The bot closes a long position
+My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strategy enters a long position when the 5-period EMA crosses above the 12-period EMA and RSI has already crossed 50. This position is closed when either RSI crosses below 50 or the 12-period EMA dips below the 5-period EMA. I also configured the bot in a way that allows you to deposit or withdraw funds without have to stop the bot.
 
 # Technologies Used
 * Python
-* Numpy
 * MatPlotLib
-* Coinbase API
+* Binance API
 * Docker
 
 # Setup
@@ -13,35 +12,21 @@ My crypto trading bot that uses a simple EMA 13-5 day cross indicator with a sto
 * initialize python virtual environment `python3 -m venv env`
 * start virtual environment `source env/bin/activate`
 * install dependencies `pip install -r requirements.txt`
-* Create Coinbase and Coinbase Pro account
-* Create and copy API and secret keys to .env as outlined in sample.env
+* Create Binance account and generate API keys and enable permission for that API key to trade
+* Create new file `config.py`
+* Copy those values to `config.py` as outlined in `config.example.py`
 * Setup complete!
 
 # Running
-`python app.py <COMMAND>`
+`python main.py <COMMAND>`
 
 # Commands
-* `help` list commands
-* `backtest <DAYS>` run a backtest of `<DAYS>` length from today
-* `plot <DAYS>` plot the strategy and it's performance on an MPL plot within the period of `<DAYS>` days ago to now (just like the ones seen below)
-* `run` run the strategy live *NOTE* I have not written the code to allow the bot to run live. If you want to do so, you have to figure it out for yourself.
+* `-h` list example
+* `-b <DAYS>` run a backtest of `<DAYS>` length from today
+* `-r` run the strategy live *NOTE* I have not written the code to allow the bot to run live. If you want to do so, you have to figure it out for yourself.
 
+# Backtesting Results
 
-# Testing
-`python -m unittest discover`
-
-
-# Backtesting results for Ethereum in USD
-### 3 months from June 20, 2021
-* Starting funds: $200
-* Net gains: $171.91
-* profit (%): 85.958%
-![4 month backtest plot](./images/figure1.png "4 month backtest plot")
-### 1 year from June 20, 2021
-* Starting funds: $200
-* Net gains: $1502.31
-* profit (%): 751.158%
-![1 Year backtest plot ](./images/figure2.png "1 year backtest plot")
 
 # Disclaimer
-If you want to use this bot, you are using it at your own risk. I'm not responsible for any money lost. Results in using the bot may vary.
+Feel free to use this bot and play around with the parameters, but I am not responsible for any money lost and you accept all the risks when using this. The results in the images may also vary from your experience.
