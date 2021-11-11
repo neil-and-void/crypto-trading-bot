@@ -63,6 +63,7 @@ if __name__ == "__main__":
                 ohlc = binance.get_ohlc(
                     config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=1)[0]
                 signal = neil_bot.analyze(ohlc)
+
                 try:
                     if signal == BUY:
                         # buy as much base currency with quote as we can
@@ -81,6 +82,7 @@ if __name__ == "__main__":
                             round(busd_quantity, 6), config.COIN_PAIR)
                         print(
                             f'$$$ SOLD {res["executedQty"]} {res["symbol"]} $$$')
+
                 except (BinanceAPIException, ClientError) as e:
                     order_type = 'sell' if signal == SELL else 'buy'
                     print(
