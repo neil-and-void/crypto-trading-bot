@@ -63,14 +63,13 @@ if __name__ == "__main__":
                 ohlc = binance.get_ohlc(
                     config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=1)[0]
                 signal = neil_bot.analyze(ohlc)
-
+                server_time = binance.get_server_time()
                 try:
                     if signal == BUY:
                         # buy as much base currency with quote as we can
                         busd_balance = binance.get_coin_balance('BUSD', 10000)
                         res = binance.buy(
-                            Decimal(busd_balance), config.COIN_PAIR)
-                        print(res)
+                            Decimal(busd_balance), config.COIN_PAIR, timestamp=server_time)
                         print(
                             f'$$$ BOUGHT {res["executedQty"]} {res["symbol"]} $$$')
 
@@ -79,14 +78,14 @@ if __name__ == "__main__":
                         eth_balance = binance.get_coin_balance('ETH', 10000)
                         busd_quantity = float(eth_balance) * float(ohlc[CLOSE])
                         res = binance.sell(
-                            round(busd_quantity, 6), config.COIN_PAIR)
+                            round(busd_quantity, 6), config.COIN_PAIR, timestamp=server_time)
                         print(
                             f'$$$ SOLD {res["executedQty"]} {res["symbol"]} $$$')
 
                 except (BinanceAPIException, ClientError) as e:
                     order_type = 'sell' if signal == SELL else 'buy'
                     print(
-                        f'### Failed attempt to place a {order_type} order. ###\n Error: {e}')
+                        f'### Failed attempt to place a {order_type} order.###\n Error: {e}')
 
                 except Exception as e:
                     print(e)
