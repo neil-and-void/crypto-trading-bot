@@ -8,29 +8,31 @@ class Binance:
         self.spot_client = Spot(key=api_key, secret=secret_key)
         self.client = Client(api_key, secret_key)
 
-    def buy(self, quantity, symbol):
+    def buy(self, quantity, symbol, timestamp):
         """ Issue a buy order
 
         Args:
             quantity (Decimal): Amount of quote currency to buy
             symbol (String): Coin symbol
+            timestamp (int): Unix time stamp 
 
         Returns:
             dict: Response data of buy order
         """
-        return self.client.create_order(side=SIDE_BUY, symbol=symbol, quoteOrderQty=quantity, type=ORDER_TYPE_MARKET, recvWindow=10000)
+        return self.client.create_order(side=SIDE_BUY, symbol=symbol, quoteOrderQty=quantity, type=ORDER_TYPE_MARKET, timestamp=timestamp)
 
-    def sell(self, quantity, symbol):
+    def sell(self, quantity, symbol, timestamp):
         """ Issue a sell order
 
         Args:
             quantity (Decimal): Amount of base currency to sell
             symbol (String): Coin symbol
+            timestamp (int): Unix time stamp 
 
         Returns:
             dict: Response data of sell order
         """
-        return self.spot_client.new_order(side=SIDE_SELL, symbol=symbol, quoteOrderQty=quantity, type=ORDER_TYPE_MARKET, recvWindow=10000)
+        return self.spot_client.new_order(side=SIDE_SELL, symbol=symbol, quoteOrderQty=quantity, type=ORDER_TYPE_MARKET, timestamp=timestamp)
 
     def get_ohlc(self, symbol, interval, limit):
         """ Get ohlc data for coin in the given interval
@@ -59,3 +61,11 @@ class Binance:
         for coin in coins:
             if coin['coin'] == symbol:
                 return coin['free']
+
+    def get_server_time(self):
+        """ Get the current Binance server time
+
+        Returns:
+            int: Server time
+        """
+        return self.client.get_server_time()['serverTime']
