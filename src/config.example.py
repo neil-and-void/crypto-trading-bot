@@ -1,0 +1,15 @@
+
+# ! Change the values here to experiment with the parameters of the strategy
+SHORT_EMA_PERIOD = 5
+SHORT_EMA_SMOOTHING = 2
+LONG_EMA_PERIOD = 12
+LONG_EMA_SMOOTHING = 2
+RSI_PERIOD = 21
+RSI_THRESHOLD = 50.0
+COIN_PAIR = 'ETHBUSD'
+BASE_CURRENCY = 'ETH'
+QUOTE_CURRENCY = 'BUSD'
+PERIOD_LENGTH = 3600  # 1 hour in seconds
+
+BINANCE_API_KEY =
+BINANCE_SECRET_KEY =

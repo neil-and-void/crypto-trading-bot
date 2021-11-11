@@ -1,20 +1,9 @@
-from enum import IntEnum
+OPEN_TIME = 0
+OPEN = 1
+HIGH = 2
+LOW = 3
+CLOSE = 4
+CLOSE_TIME = 6
 
-
-class OHLC(IntEnum):
-    """
-    names with the corresponding indices of data in OHLC response data from Kraken API
-    """
-    time = 0
-    low = 1
-    high = 2
-    open = 3
-    close = 4
-    volume = 5
-
-
-SHORT_EMA_LEN = 5
-LONG_EMA_LEN = 13
-SMOOTHING_FACTOR = 2
-
-TWENTY_FOUR_HOURS = 3600  # minutes
+BUY = 1
+SELL = -1
