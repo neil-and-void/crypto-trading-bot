@@ -67,20 +67,24 @@ if __name__ == "__main__":
                     if signal == BUY:
                         # buy as much base currency with quote as we can
                         busd_balance = binance.get_coin_balance('BUSD', 10000)
-                        binance.buy(Decimal(busd_balance), config.COIN_PAIR)
-                        print(f'$$$ BUY SIGNAL: ${ohlc[CLOSE]} $$$')
+                        res = binance.buy(
+                            Decimal(busd_balance), config.COIN_PAIR)
+                        print(res)
+                        print(
+                            f'$$$ BOUGHT {res["executedQty"]} {res["symbol"]} $$$')
 
                     elif signal == SELL:
                         # sell as much quote currency currency as we can
                         eth_balance = binance.get_coin_balance('ETH', 10000)
                         busd_quantity = float(eth_balance) * float(ohlc[CLOSE])
-                        binance.sell(round(busd_quantity, 6), config.COIN_PAIR)
-                        print(f'$$$ SELL SIGNAL: ${ohlc[CLOSE]} $$$')
-
+                        res = binance.sell(
+                            round(busd_quantity, 6), config.COIN_PAIR)
+                        print(
+                            f'$$$ SOLD {res["executedQty"]} {res["symbol"]} $$$')
                 except (BinanceAPIException, ClientError) as e:
                     order_type = 'sell' if signal == SELL else 'buy'
                     print(
-                        f'### Failed attempt to place a {order_type} order.###\n Error: {e}')
+                        f'### Failed attempt to place a {order_type} order. ###\n Error: {e}')
 
                 except Exception as e:
                     print(e)
