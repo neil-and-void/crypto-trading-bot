@@ -1,8 +1,10 @@
 import sys
 import getopt
 import time
+from decimal import Decimal
 
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 from src.backtester import Backtester
 from src.plotter import Plotter
 from src.binance_client import Binance
@@ -37,20 +39,16 @@ if __name__ == "__main__":
                 print(
                     'period length needs to be greater than minimum initialization length')
                 exit(1)
+
             ohlc = binance.get_ohlc(
                 config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=period_length)
             backtester = Backtester()
             buys, sells = backtester.backtest(
                 ohlc, neil_bot, min_initialization_length)
+
             plotter = Plotter()
             plotter.generate_plot(
                 ohlc[min_initialization_length:], buys, sells, config.COIN_PAIR, period_length, Client.KLINE_INTERVAL_1HOUR)
-
-            # busd_balance = binance.get_coin_balance('BUSD', 10000)
-            # res = binance.buy(Decimal(busd_balance), 'ETHBUSD')
-
-            # eth_balance = binance.get_coin_balance('ETH', 10000)
-            # res = binance.sell(Decimal(eth_balance), 'BUSDETH')
 
         elif opt in ('-r'):
             # fetch as many periods as the longest period for indicators
@@ -64,19 +62,25 @@ if __name__ == "__main__":
                 ohlc = binance.get_ohlc(
                     config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=1)
                 signal = neil_bot.analyze(ohlc)
-                if signal == BUY:
-                    # buy as much base currency with quote as we can
-                    busd_balance = binance.get_coin_balance(
-                        config.QUOTE_CURRENCY, 10000)
-                    print(f'BUY SIGNAL: ${ohlc[CLOSE]}')
-                    # binance.buy()
-                    pass
-                elif signal == SELL:
-                    # sell as much quote currency currency as we can
-                    eth_balance = binance.get_coin_balance(
-                        config.BASE_CURRENCY, 10000)
-                    print(f'SELL SIGNAL: ${ohlc[CLOSE]}')
-                    # binance.sell()
-                    pass
+                try:
+                    if signal == BUY:
+                        # buy as much base currency with quote as we can
+                        busd_balance = binance.get_coin_balance('BUSD', 10000)
+                        binance.buy(Decimal(busd_balance), config.COIN_PAIR)
+                        print(f'BUY SIGNAL: ${ohlc[CLOSE]}')
+
+                    elif signal == SELL:
+                        # sell as much quote currency currency as we can
+                        eth_balance = binance.get_coin_balance('ETH', 10000)
+                        busd_quantity = float(
+                            eth_balance) * float(ohlc[-1][CLOSE])
+                        binance.sell(round(busd_quantity, 6), config.COIN_PAIR)
+                        print(f'SELL SIGNAL: ${ohlc[CLOSE]}')
+
+                except BinanceAPIException:
+                    order_type = 'sell' if signal == SELL else 'buy'
+                    print(f'Failed attempt to place a {order_type} order')
+
                 time.sleep(config.PERIOD_LENGTH)
+
     exit()

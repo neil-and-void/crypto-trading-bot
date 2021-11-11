@@ -30,7 +30,7 @@ class Binance:
         Returns:
             dict: Response data of sell order
         """
-        return self.spot_client.new_order(side=SIDE_SELL, symbol=symbol, quantity=quantity, type=ORDER_TYPE_MARKET, recvWindow=10000)
+        return self.spot_client.new_order(side=SIDE_SELL, symbol=symbol, quoteOrderQty=quantity, type=ORDER_TYPE_MARKET, recvWindow=10000)
 
     def get_ohlc(self, symbol, interval, limit):
         """ Get ohlc data for coin in the given interval
