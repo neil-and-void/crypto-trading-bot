@@ -1,5 +1,5 @@
 # Crypto Trading Bot
-My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strategy enters a long position when the 5-period EMA crosses above the 12-period EMA and RSI has already crossed 50. This position is closed when either RSI crosses below 50 or the 12-period EMA dips below the 5-period EMA. I also configured the bot in a way that allows you to deposit or withdraw funds without have to stop the bot.
+My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strategy enters a long position when the 5-period EMA crosses above the 12-period EMA and RSI has already crossed 50. This position is closed when either RSI crosses below 50 or the 12-period EMA dips below the 5-period EMA. The bot is also implemented in a way that allows you to deposit or withdraw funds without having to stop the bot.
 
 # Technologies Used
 * Python
