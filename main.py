@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
+from binance.error import ClientError
 from src.backtester import Backtester
 from src.plotter import Plotter
 from src.binance_client import Binance
@@ -14,7 +15,7 @@ from src.bot import NeilBot
 
 
 if __name__ == "__main__":
-    optlist, _ = getopt.getopt(sys.argv[1:], 'b:h:r:')
+    optlist, _ = getopt.getopt(sys.argv[1:], 'b:h:r')
     binance = Binance(config.BINANCE_API_KEY, config.BINANCE_SECRET_KEY)
     neil_bot = NeilBot(
         long_smoothing=config.LONG_EMA_SMOOTHING,
@@ -60,26 +61,29 @@ if __name__ == "__main__":
 
             while True:
                 ohlc = binance.get_ohlc(
-                    config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=1)
+                    config.COIN_PAIR, Client.KLINE_INTERVAL_1HOUR, limit=1)[0]
                 signal = neil_bot.analyze(ohlc)
                 try:
                     if signal == BUY:
                         # buy as much base currency with quote as we can
                         busd_balance = binance.get_coin_balance('BUSD', 10000)
                         binance.buy(Decimal(busd_balance), config.COIN_PAIR)
-                        print(f'BUY SIGNAL: ${ohlc[CLOSE]}')
+                        print(f'$$$ BUY SIGNAL: ${ohlc[CLOSE]} $$$')
 
                     elif signal == SELL:
                         # sell as much quote currency currency as we can
                         eth_balance = binance.get_coin_balance('ETH', 10000)
-                        busd_quantity = float(
-                            eth_balance) * float(ohlc[-1][CLOSE])
+                        busd_quantity = float(eth_balance) * float(ohlc[CLOSE])
                         binance.sell(round(busd_quantity, 6), config.COIN_PAIR)
-                        print(f'SELL SIGNAL: ${ohlc[CLOSE]}')
+                        print(f'$$$ SELL SIGNAL: ${ohlc[CLOSE]} $$$')
 
-                except BinanceAPIException:
+                except (BinanceAPIException, ClientError) as e:
                     order_type = 'sell' if signal == SELL else 'buy'
-                    print(f'Failed attempt to place a {order_type} order')
+                    print(
+                        f'### Failed attempt to place a {order_type} order.###\n Error: {e}')
+
+                except Exception as e:
+                    print(e)
 
                 time.sleep(config.PERIOD_LENGTH)
 
