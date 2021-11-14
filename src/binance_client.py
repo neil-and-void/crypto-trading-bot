@@ -5,6 +5,12 @@ from binance.client import Client
 
 class Binance:
     def __init__(self, api_key, secret_key):
+        """ initialize Binance class with Spot and Binance Clients given the api and secret keys
+
+        Args:
+            api_key (str): Binance API key
+            secret_key (str): Binance API secret key
+        """
         self.spot_client = Spot(key=api_key, secret=secret_key)
         self.client = Client(api_key, secret_key)
 
@@ -14,7 +20,7 @@ class Binance:
         Args:
             quantity (Decimal): Amount of quote currency to buy
             symbol (String): Coin symbol
-            timestamp (int): Unix time stamp 
+            timestamp (int): Unix timestamp of Binance server for synchronization purposes
 
         Returns:
             dict: Response data of buy order
@@ -27,7 +33,7 @@ class Binance:
         Args:
             quantity (Decimal): Amount of base currency to sell
             symbol (String): Coin symbol
-            timestamp (int): Unix time stamp 
+            timestamp (int): Unix timestamp of Binance server for synchronization purposes
 
         Returns:
             dict: Response data of sell order
@@ -52,7 +58,7 @@ class Binance:
 
         Args:
             symbol (String): Coin symbol
-            timestamp (int): Binance doesn't say so idk
+            timestamp (int): Unix timestamp of Binance server for synchronization purposes
 
         Returns:
             String : Quantity of coin in wallet
@@ -66,6 +72,6 @@ class Binance:
         """ Get the current Binance server time
 
         Returns:
-            int: Server time
+            int: Unix timestamp of Binance server
         """
         return self.client.get_server_time()['serverTime']
