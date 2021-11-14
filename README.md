@@ -29,9 +29,9 @@ My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strat
 * Legend:
   * Blue = Buy signal
   * Orange = Sell signal
-![128 1hr intervals backtest](./images/Figure_1.png "128 1hr intervals backtest")
-![256 1hr intervals backtest](./images/Figure_2.png "256 1hr intervals backtest")
-![512 1hr intervals backtest](./images/Figure_3.png "512 1hr intervals backtest")
+![128 1hr intervals backtest](./images/128_figure.png "128 1hr intervals backtest")
+![256 1hr intervals backtest](./images/256_figure.png "256 1hr intervals backtest")
+![512 1hr intervals backtest](./images/512_figure.png "512 1hr intervals backtest")
 
 # Disclaimer
 Feel free to use this bot and play around with the parameters, but I am not responsible for any money lost and you accept all the risks when using this. The results in the images may also vary from your experience.
