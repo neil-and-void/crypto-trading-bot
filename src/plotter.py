@@ -1,9 +1,8 @@
-from datetime import datetime as dt
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
+import mplfinance as mpf
+import pandas as pd
 
-from src import constants, config
+from src.constants import *
 
 
 class Plotter:
@@ -18,29 +17,28 @@ class Plotter:
             interval (String): Interval type
             pair (String): Coin pair 
         """
-        hourly_close = np.array([float(ohlc[constants.CLOSE])
-                                 for ohlc in ohlc_data])
+        ohlc_array = np.array(ohlc_data)
 
-        times = np.array([dt.utcfromtimestamp(float(ohlc[constants.CLOSE_TIME])/1000).strftime('%b %d %y %H:%M')
-                          for ohlc in ohlc_data])
+        # time
+        close_times_df = pd.DataFrame(
+            ohlc_array[:, CLOSE_TIME], columns=["CloseTimes"])
 
-        fig, ax = plt.subplots()
+        # format ohlc data
+        ohlc_df = pd.DataFrame(ohlc_array[:, [OPEN, HIGH, LOW, CLOSE]], columns=[
+                               "Open", "High", "Low", "Close"])
+        cols = ["Open", "High", "Low", "Close"]
+        ohlc_df[cols] = ohlc_df[cols].apply(
+            pd.to_numeric, errors='coerce', axis=1)
+        ohlc_df = ohlc_df.join(close_times_df)
+        ohlc_df = ohlc_df.set_index(pd.DatetimeIndex(
+            pd.to_datetime(ohlc_df['CloseTimes'], unit='ms')))
 
-        plt.xlabel('Dates (UTC)')
-        plt.ylabel(f"hourly closing prices ({config.COIN_PAIR})")
-        plt.plot(times, hourly_close,
-                 label=f"{pair} close price", color="black")
-        plt.plot(times, buys, label="Buy Indicator", marker=".",
-                 linestyle='None', color="green", markersize=10)
-        plt.plot(times, sells, label="Sell Indicator", marker=".",
-                 linestyle='None', color="red", markersize=10)
+        # setup buys dataframe
+        buys_df = pd.DataFrame(buys, columns=["Buys"])
+        sells_df = pd.DataFrame(sells, columns=["Sells"])
+        bot_results_df = buys_df.join(sells_df)
 
-        plt.legend()
-        ax.xaxis.set_major_locator(
-            ticker.MultipleLocator(len(ohlc_data) // 12))
-        plt.grid()
-        fig.autofmt_xdate()
-        ax.autoscale()
-        plt.title(
-            f"Buy and Sell Indicators for {pair} over last {length} {interval} periods")
-        plt.show()
+        add_plot = mpf.make_addplot(bot_results_df, type='scatter', )
+
+        mpf.plot(ohlc_df, type='candle',
+                 addplot=add_plot, title=f'{pair} for {length} {interval} periods')
