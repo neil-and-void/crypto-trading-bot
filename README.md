@@ -21,9 +21,9 @@ My crypto trading bot that uses a 12-5 EMA cross and 21 RSI strategy. This strat
 `python main.py <COMMAND>`
 
 # Commands
-* `-h` list example
-* `-b <DAYS>` run a backtest of `<DAYS>` length from today
-* `-r` run the strategy live
+* `-h`: list example
+* `-b <number>`: run a backtest of length `<number>` from current time
+* `-r`: run the strategy live
 
 # Backtesting Results
 * Legend:
