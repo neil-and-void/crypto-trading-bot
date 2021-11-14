@@ -100,13 +100,14 @@ class NeilBot():
     def analyze(self, ohlc) -> None:
         """ Analyze for the occurrence of a buy or sell signal for this ohlc
 
+        ! Implement your custom strategy by replacing the body of this method
+
         Args:
             ohlc (List): ohlc of the current period
 
         Returns:
             int: Buy or sell constant to indicate action to be taken
         """
-        # ! Implement your custom strategy by replacing the body of this method
         long_ema = self._ema(
             float(ohlc[CLOSE]), self._prev_long_ema, self._long_smoothing, self._long_ema_period)
         short_ema = self._ema(
